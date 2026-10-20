@@ -17,10 +17,14 @@ Status: ready, in-progress, review-passed, done.
 
 | Id | Title | Owned paths | Tier | Status | Branch |
 |---|---|---|---|---|---|
-| T01 | Rules core (both games) | scripts/rules, test/unit/test_sim.gd | 2 | in-progress | feat/scavenger-{2d,3d}-rules |
+| T01 | Rules core (both games) | scripts/rules, test/unit/test_sim.gd | 2 | done (scavenger-3d 956575e) | feat/scavenger-{2d,3d}-rules |
 | A01 | Models, glTF, 2D pre-renders | 3d: art, assets/models; 2d: assets/sprites | 2 | in-progress | art/scavenger-3d-models, art/scavenger-2d-sprites |
-| T02 | 3D prototype | scenes, scripts (not rules), shaders, data, test/scenarios | 2 | planned | feat/scavenger-3d-demo |
-| T03 | 2D prototype | scenes, scripts (not rules), shaders, data, test/scenarios | 2 | planned | feat/scavenger-2d-demo |
+| T02 | 3D prototype | scenes, scripts (not rules), shaders, data, test/scenarios | 2 | in-progress | feat/scavenger-3d-demo |
+| T03 | 2D prototype | scenes, scripts (not rules), shaders, data, test/scenarios | 2 | in-progress | feat/scavenger-2d-demo |
 
 ## Follow-ups
-None yet.
+From the T01 review (non-blocking; only if play shows a need):
+- Sim path search scans the whole 80x80 grid per call and re-plans every 0.3 s while attacking; `advance()` has no
+  step cap (a 1 s hitch runs 60 steps). Check with a perf scenario (attack a far drone) before acting.
+- A layout with no canisters wins on the first step; `patrol_radius` 0 gives a NaN drone position.
+- `drone_at` test only probes the drone's own position.
