@@ -4,10 +4,10 @@
   "timeout_frames": 3600,
   "steps": [
     {"expect_signal": {"node": ".", "signal": "level_started", "timeout_frames": 300}},
-    {"assert_node": "Player", "exists": true},
+    {"assert_node": "Robot", "exists": true},
+    {"assert_prop": {"node": ".", "prop": "headlight_on", "op": "==", "value": true}},
     {"wait_frames": 30},
     {"screenshot": "boot"},
-    {"metrics": {"name": "boot", "frames": 120}},
     {"assert_no_errors": true}
   ]
 }

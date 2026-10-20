@@ -1,0 +1,14 @@
+{
+  "scene": "res://scenes/main.tscn",
+  "seed": 1234,
+  "timeout_frames": 3600,
+  "steps": [
+    {"expect_signal": {"node": ".", "signal": "level_started", "timeout_frames": 300}},
+    {"call": {"node": ".", "method": "debug_move_to", "args": [-2.0, 0.0]}},
+    {"key_tap": "F3", "frames": 2},
+    {"wait_frames": 60},
+    {"screenshot": "street"},
+    {"metrics": {"name": "perf_street", "frames": 600}},
+    {"assert_no_errors": true}
+  ]
+}

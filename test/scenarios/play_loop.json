@@ -1,0 +1,31 @@
+{
+  "scene": "res://scenes/main.tscn",
+  "seed": 1234,
+  "timeout_frames": 6000,
+  "steps": [
+    {"expect_signal": {"node": ".", "signal": "level_started", "timeout_frames": 300}},
+    {"screenshot": "start"},
+    {"mouse_click": [900, 300], "button": "left"},
+    {"assert_prop": {"node": ".", "prop": "clicks_handled", "op": ">=", "value": 1}},
+    {"wait_frames": 20},
+    {"set_prop": {"node": ".", "prop": "fuel", "value": 50.0}},
+    {"call": {"node": ".", "method": "debug_move_to", "args": [3.0, 2.0]}},
+    {"expect_signal": {"node": ".", "signal": "canister_taken", "timeout_frames": 600}},
+    {"assert_prop": {"node": ".", "prop": "canisters_left", "op": "==", "value": 4}},
+    {"assert_prop": {"node": ".", "prop": "fuel", "op": ">", "value": 70.0}},
+    {"call": {"node": ".", "method": "debug_move_to", "args": [3.0, -5.0]}},
+    {"wait_frames": 150},
+    {"screenshot": "headlight_on_house"},
+    {"call": {"node": ".", "method": "debug_attack", "args": [0]}},
+    {"expect_signal": {"node": ".", "signal": "drone_destroyed", "timeout_frames": 1500}},
+    {"assert_prop": {"node": ".", "prop": "drones_alive", "op": "==", "value": 2}},
+    {"wait_frames": 10},
+    {"screenshot": "drone_destroyed"},
+    {"key_tap": "F", "frames": 2},
+    {"assert_prop": {"node": ".", "prop": "fog_on", "op": "==", "value": false}},
+    {"screenshot": "fog_off"},
+    {"key_tap": "F", "frames": 2},
+    {"assert_prop": {"node": ".", "prop": "fog_on", "op": "==", "value": true}},
+    {"assert_no_errors": true}
+  ]
+}
