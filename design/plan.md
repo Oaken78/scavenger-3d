@@ -18,7 +18,7 @@ Status: ready, in-progress, review-passed, done.
 | Id | Title | Owned paths | Tier | Status | Branch |
 |---|---|---|---|---|---|
 | T01 | Rules core (both games) | scripts/rules, test/unit/test_sim.gd | 2 | done (scavenger-3d 956575e) | feat/scavenger-{2d,3d}-rules |
-| A01 | Models, glTF, 2D pre-renders | 3d: art, assets/models; 2d: assets/sprites | 2 | in-progress | art/scavenger-3d-models, art/scavenger-2d-sprites |
+| A01 | Models, glTF, 2D pre-renders | 3d: art, assets/models; 2d: assets/sprites | 2 | done (scavenger-3d 049ce2b) | art/scavenger-3d-models, art/scavenger-2d-sprites |
 | T02 | 3D prototype | scenes, scripts (not rules), shaders, data, test/scenarios | 2 | in-progress | feat/scavenger-3d-demo |
 | T03 | 2D prototype | scenes, scripts (not rules), shaders, data, test/scenarios | 2 | in-progress | feat/scavenger-2d-demo |
 
