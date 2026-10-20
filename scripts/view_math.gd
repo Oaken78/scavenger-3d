@@ -20,9 +20,11 @@ static func heading_to_rot_y(heading: float) -> float:
 	return -heading
 
 
-## Layout prop rotation (degrees about +y, x towards z) as rotation.y.
+## Layout prop rotation (degrees about +y) as rotation.y. The A01 models (and the 2D pre-renders) use
+## rotation_degrees.y = rot. Footprints are centred rectangles at multiples of 90 degrees, so the sim's blocking
+## is the same whichever way rot turns.
 static func layout_rot_to_rot_y(rot_deg: float) -> float:
-	return -deg_to_rad(rot_deg)
+	return deg_to_rad(rot_deg)
 
 
 ## Where a ray meets the horizontal plane at height y; null when it runs parallel or points away.

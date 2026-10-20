@@ -5,7 +5,7 @@
   "steps": [
     {"expect_signal": {"node": ".", "signal": "level_started", "timeout_frames": 300}},
     {"assert_node": "Robot", "exists": true},
-    {"assert_node": "Robot/Headlight", "exists": true},
+    {"assert_prop": {"node": ".", "prop": "headlight_on", "op": "==", "value": true}},
     {"wait_frames": 30},
     {"screenshot": "boot"},
     {"assert_no_errors": true}

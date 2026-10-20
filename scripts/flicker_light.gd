@@ -21,7 +21,8 @@ var glow_mesh: MeshInstance3D
 var _t := 0.0
 var _stutter_left := 0.0
 var _rng := RandomNumberGenerator.new()
-var _glow_base := -1.0
+var _glow_base := 1.0
+var _glow_mat: StandardMaterial3D
 
 
 func _ready() -> void:
@@ -50,11 +51,10 @@ func _process(delta: float) -> void:
 func _dim_glow(f: float) -> void:
 	if glow_mesh == null:
 		return
-	var mat := glow_mesh.material_override as StandardMaterial3D
-	if mat == null:
-		return
-	if _glow_base < 0.0:
-		mat = mat.duplicate()
-		glow_mesh.material_override = mat
-		_glow_base = mat.emission_energy_multiplier
-	mat.emission_energy_multiplier = _glow_base * clampf(f, 0.05, 1.5)
+	if _glow_mat == null:
+		_glow_mat = ModelFactory.writable_material(glow_mesh)
+		if _glow_mat == null:
+			glow_mesh = null
+			return
+		_glow_base = _glow_mat.emission_energy_multiplier
+	_glow_mat.emission_energy_multiplier = _glow_base * clampf(f, 0.05, 1.5)

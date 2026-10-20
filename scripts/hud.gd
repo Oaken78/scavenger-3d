@@ -82,7 +82,7 @@ func _process(_delta: float) -> void:
 	if _stats.visible:
 		_stats.text = "%.1f ms  %d FPS  %d draw calls" % [
 			_ms_avg,
-			Engine.get_frames_per_second(),
+			roundi(1000.0 / maxf(_ms_avg, 0.001)),
 			Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		]
 

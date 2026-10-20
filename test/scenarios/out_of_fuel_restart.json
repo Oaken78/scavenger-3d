@@ -1,0 +1,18 @@
+{
+  "scene": "res://scenes/main.tscn",
+  "seed": 1234,
+  "timeout_frames": 3600,
+  "steps": [
+    {"expect_signal": {"node": ".", "signal": "level_started", "timeout_frames": 300}},
+    {"set_prop": {"node": ".", "prop": "fuel", "value": 0.5}},
+    {"wait_frames": 120},
+    {"assert_prop": {"node": ".", "prop": "outcome", "op": "==", "value": "out_of_fuel"}},
+    {"screenshot": "out_of_fuel"},
+    {"assert_no_errors": true},
+    {"action_press": "restart", "frames": 2},
+    {"wait_frames": 10},
+    {"assert_prop": {"node": ".", "prop": "outcome", "op": "==", "value": "running"}},
+    {"assert_prop": {"node": ".", "prop": "fuel", "op": ">", "value": 99.0}},
+    {"assert_no_errors": true}
+  ]
+}

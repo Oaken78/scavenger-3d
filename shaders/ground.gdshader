@@ -29,6 +29,11 @@ uniform float crack_scale = 0.9;
 // Softness of the road edge where moss creeps over, metres.
 uniform float edge_soft = 1.2;
 
+// A hole in the ground (world x, z rectangle) where the subway stairs go down; off when hole_enabled is false.
+uniform bool hole_enabled = false;
+uniform vec2 hole_min = vec2(0.0);
+uniform vec2 hole_max = vec2(0.0);
+
 varying vec3 world_pos;
 
 float hash(vec2 p) {
@@ -77,6 +82,9 @@ void vertex() {
 
 void fragment() {
 	vec2 p = world_pos.xz;
+	if (hole_enabled && all(greaterThan(p, hole_min)) && all(lessThan(p, hole_max))) {
+		discard;
+	}
 	// Distance to the road centre segment.
 	vec2 ab = road_to - road_from;
 	float t = clamp(dot(p - road_from, ab) / dot(ab, ab), 0.0, 1.0);

@@ -21,7 +21,7 @@ signal drone_destroyed(id: int)
 
 @export_group("Moon")
 @export var moon_color: Color = Color(0.5, 0.6, 1.0)
-@export var moon_energy: float = 0.9
+@export var moon_energy: float = 0.65
 ## Moon direction as Euler degrees; a low moon behind the houses throws long shadows towards the camera.
 @export var moon_rotation: Vector3 = Vector3(-28, 160, 0)
 @export var ambient_color: Color = Color(0.22, 0.28, 0.45)
@@ -45,12 +45,14 @@ signal drone_destroyed(id: int)
 @export var lamp_color: Color = Color(1.0, 0.68, 0.35)
 @export var lamp_energy: float = 8.0
 @export var lamp_range: float = 12.0
-## Light position relative to a lamp's origin (rotated with the prop); the bulb hangs off the arm.
-@export var lamp_light_offset: Vector3 = Vector3(0.6, -0.1, 0.0)
 @export var fire_color: Color = Color(1.0, 0.45, 0.12)
 @export var fire_energy: float = 4.0
 @export var fire_range: float = 8.0
 @export var lamp_fog: float = 1.5
+
+## The subway stairwell opening in the prop's local x, z (the ground is cut away there).
+@export var stair_hole_min: Vector2 = Vector2(-1.3, -2.7)
+@export var stair_hole_max: Vector2 = Vector2(1.3, 2.6)
 
 @export_group("Drones and canisters")
 @export var eye_color: Color = Color(1.0, 0.08, 0.04)
@@ -104,6 +106,10 @@ var robot_x: float:
 var robot_z: float:
 	get:
 		return sim.robot_pos.y
+## True while the robot's headlight shines (it fades out at fuel 0).
+var headlight_on: bool:
+	get:
+		return _headlight != null and _headlight.is_inside_tree() and _headlight.light_energy > 0.01
 var clicks_handled: int = 0
 var fog_on: bool = true
 
@@ -120,6 +126,7 @@ var _robot_visual: Node3D
 var _headlight: SpotLight3D
 var _robot_glow: MeshInstance3D
 var _drones: Array = []  ## {node, visual, anim, eye}
+var _ground_mat: ShaderMaterial
 var _occluders: Array = []  ## {node, box: AABB (prop local), meshes: Array, fade: float}
 var _canisters: Array = []  ## Node3D per sim canister
 var _marker: MeshInstance3D
@@ -300,6 +307,7 @@ func _build_ground() -> void:
 	mi.material_override = mat
 	mi.position = Vector3((b[0] + b[2]) * 0.5, 0.0, (b[1] + b[3]) * 0.5)
 	add_child(mi)
+	_ground_mat = mat
 
 
 func _build_props() -> void:
@@ -321,6 +329,8 @@ func _build_props() -> void:
 		if p.has("light"):
 			_add_prop_light(node, visual, str(p["light"]), fp)
 		_add_occluder(node, visual, asset, fp)
+		if asset == "subway_entrance":
+			_cut_stair_hole(node)
 		i += 1
 
 
@@ -328,26 +338,40 @@ func _add_prop_light(node: Node3D, visual: Node3D, kind: String, fp: Dictionary)
 	var light := FlickerLight.new()
 	light.name = "Light"
 	light.shadow_enabled = true
-	light.glow_mesh = visual.find_child("Glow", true, false) as MeshInstance3D
+	light.glow_mesh = ModelFactory.find_glow(visual)
 	var h := float(fp.get("light_height", 1.0))
+	# The model's "light" empty marks the bulb or the fire; without one, straight up at light_height.
+	var anchor := ModelFactory.find_anchor(visual, "light")
+	var at := anchor.position if anchor != null else Vector3(0, h, 0)
 	if kind == "fire":
 		light.light_color = fire_color
 		light.base_energy = fire_energy
 		light.omni_range = fire_range
 		light.wobble = 0.35
 		light.wobble_speed = 3.0
-		light.position = Vector3(0, h, 0)
 	else:
 		light.light_color = lamp_color
 		light.base_energy = lamp_energy
 		light.omni_range = lamp_range
-		light.position = Vector3(0, h, 0) + lamp_light_offset
 		if kind == "lamp_flicker":
 			light.stutter_rate = 0.35
 			light.wobble = 0.05
 	light.omni_attenuation = 1.2
 	light.light_volumetric_fog_energy = lamp_fog
-	node.add_child(light)
+	if anchor != null:
+		anchor.add_child(light)
+	else:
+		light.position = at
+		visual.add_child(light)
+
+
+## Opens the ground over the subway stairwell (A01: local x -1.3..1.3, z -2.7..2.6, rotated with the prop).
+func _cut_stair_hole(node: Node3D) -> void:
+	var a := node.transform * Vector3(stair_hole_min.x, 0, stair_hole_min.y)
+	var c := node.transform * Vector3(stair_hole_max.x, 0, stair_hole_max.y)
+	_ground_mat.set_shader_parameter("hole_enabled", true)
+	_ground_mat.set_shader_parameter("hole_min", Vector2(minf(a.x, c.x), minf(a.z, c.z)))
+	_ground_mat.set_shader_parameter("hole_max", Vector2(maxf(a.x, c.x), maxf(a.z, c.z)))
 
 
 ## Tall props get a box (prop local) used to fade them while they hide the robot.
@@ -392,10 +416,9 @@ func _build_robot() -> void:
 	_robot_visual = ModelFactory.build("robot", fp)
 	_robot.add_child(_robot_visual)
 	_robot_anim = ModelFactory.find_anim_player(_robot_visual)
-	_robot_glow = _robot_visual.find_child("Glow", true, false) as MeshInstance3D
+	_robot_glow = ModelFactory.find_glow(_robot_visual)
 	_headlight = SpotLight3D.new()
 	_headlight.name = "Headlight"
-	_headlight.position = Vector3(0.35, float(fp.get("headlight_height", 1.1)), 0)
 	_headlight.rotation_degrees = Vector3(-headlight_tilt, -90.0, 0)  # -Z of the light -> +X of the robot
 	_headlight.light_color = headlight_color
 	_headlight.light_energy = headlight_energy
@@ -405,7 +428,14 @@ func _build_robot() -> void:
 	_headlight.spot_angle_attenuation = 1.5
 	_headlight.shadow_enabled = true
 	_headlight.light_volumetric_fog_energy = headlight_fog
-	_robot.add_child(_headlight)
+	# On the model's "headlight" empty (just outside the head, so the head casts no shadow on it): the light
+	# follows the head through the animations.
+	var anchor := ModelFactory.find_anchor(_robot_visual, "headlight")
+	if anchor != null:
+		anchor.add_child(_headlight)
+	else:
+		_headlight.position = Vector3(0.35, float(fp.get("headlight_height", 1.1)), 0)
+		_robot.add_child(_headlight)
 
 
 func _build_drones() -> void:
@@ -426,8 +456,12 @@ func _build_drones() -> void:
 		eye.light_energy = eye_energy
 		eye.omni_range = eye_range
 		eye.shadow_enabled = false
-		eye.position = Vector3(0.45, 0.0, 0.0)
-		visual.add_child(eye)
+		var eye_anchor := ModelFactory.find_anchor(visual, "eye_light")
+		if eye_anchor != null:
+			eye_anchor.add_child(eye)
+		else:
+			eye.position = Vector3(0.45, 0.0, 0.0)
+			visual.add_child(eye)
 		var anim := ModelFactory.find_anim_player(visual)
 		_play(anim, "hover", true)
 		_drones.append({"node": node, "visual": visual, "anim": anim, "eye": eye})
@@ -537,7 +571,9 @@ func _present(delta: float, snap: bool) -> void:
 
 
 func _animate_robot() -> void:
-	match sim.robot_anim:
+	# The sim stops on tank_stable with the last anim (often walk): stand still then.
+	var state := "idle" if sim.outcome == "tank_stable" else sim.robot_anim
+	match state:
 		"walk":
 			_play(_robot_anim, "walk", true)
 		"attack":
@@ -590,10 +626,10 @@ func _on_sim_event(e: Dictionary) -> void:
 func _power_down() -> void:
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(_headlight, "light_energy", 0.0, headlight_fade_time)
-	if _robot_glow != null:
-		var m := (_robot_glow.material_override as StandardMaterial3D).duplicate() as StandardMaterial3D
-		_robot_glow.material_override = m
+	var m := ModelFactory.writable_material(_robot_glow)
+	if m != null:
 		tw.tween_property(m, "emission_energy_multiplier", 0.0, headlight_fade_time)
+		tw.tween_property(m, "albedo_color", Color(0.08, 0.08, 0.08), headlight_fade_time)
 
 
 ## A short orange flash where a drone dies.

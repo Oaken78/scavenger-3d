@@ -19,6 +19,9 @@ const STAND_IN_COLORS := {
 	"robot": Color(0.62, 0.6, 0.52),
 }
 
+## Imported material -> its copy with vertex colours shown (shared by all instances).
+static var _vcol_cache := {}
+
 
 ## The visual node for an asset. footprint is the layout's footprint entry for it.
 static func build(asset: String, footprint: Dictionary) -> Node3D:
@@ -28,7 +31,7 @@ static func build(asset: String, footprint: Dictionary) -> Node3D:
 			var inst := scene.instantiate() as Node3D
 			if inst != null:
 				inst.name = "Model"
-				_cast_shadows(inst)
+				_prepare_model(inst)
 				return inst
 	return _stand_in(asset, footprint)
 
@@ -44,11 +47,77 @@ static func find_anim_player(node: Node) -> AnimationPlayer:
 	return null
 
 
-static func _cast_shadows(node: Node) -> void:
-	if node is GeometryInstance3D:
-		(node as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+## A light anchor empty (models: robot "headlight", drone "eye_light", lamp and campfire "light"), or null.
+static func find_anchor(visual: Node, anchor_name: String) -> Node3D:
+	return visual.find_child(anchor_name, true, false) as Node3D
+
+
+## The emissive part (stand-in "Glow", or a model mesh with an sc_emit_* material), or null.
+static func find_glow(visual: Node) -> MeshInstance3D:
+	var glow := visual.find_child("Glow", true, false) as MeshInstance3D
+	if glow != null:
+		return glow
+	for n in visual.find_children("*", "MeshInstance3D", true, false):
+		if _is_emissive(n as MeshInstance3D):
+			return n
+	return null
+
+
+## A material of mi that may be changed without touching other instances (emission fades, flicker).
+static func writable_material(mi: MeshInstance3D) -> StandardMaterial3D:
+	if mi == null:
+		return null
+	var mat := mi.material_override as StandardMaterial3D
+	if mat != null:
+		mat = mat.duplicate()
+		mi.material_override = mat
+		return mat
+	if mi.mesh == null or mi.mesh.get_surface_count() == 0:
+		return null
+	mat = mi.get_active_material(0) as StandardMaterial3D
+	if mat == null:
+		return null
+	mat = mat.duplicate()
+	mi.set_surface_override_material(0, mat)
+	return mat
+
+
+static func _is_emissive(mi: MeshInstance3D) -> bool:
+	if mi.mesh == null:
+		return false
+	for i in mi.mesh.get_surface_count():
+		var mat := mi.mesh.surface_get_material(i)
+		if mat != null and mat.resource_name.begins_with("sc_emit_"):
+			return true
+	return false
+
+
+## Shadows on, except glowing parts (they sit around their own light); vertex colours shown as albedo
+## (the A01 materials are vertex-colour based but import with the flag off).
+static func _prepare_model(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		var emissive := _is_emissive(mi)
+		mi.cast_shadow = (
+			GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if emissive
+			else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		)
+		if mi.mesh != null:
+			for i in mi.mesh.get_surface_count():
+				var mat := mi.mesh.surface_get_material(i) as StandardMaterial3D
+				var has_color: bool = (mi.mesh.surface_get_format(i) & Mesh.ARRAY_FORMAT_COLOR) != 0
+				if mat != null and has_color and not mat.vertex_color_use_as_albedo:
+					mi.set_surface_override_material(i, _vcol_variant(mat))
 	for c in node.get_children():
-		_cast_shadows(c)
+		_prepare_model(c)
+
+
+static func _vcol_variant(mat: StandardMaterial3D) -> StandardMaterial3D:
+	if not _vcol_cache.has(mat):
+		var m := mat.duplicate() as StandardMaterial3D
+		m.vertex_color_use_as_albedo = true
+		_vcol_cache[mat] = m
+	return _vcol_cache[mat]
 
 
 static func _stand_in(asset: String, fp: Dictionary) -> Node3D:
@@ -62,21 +131,25 @@ static func _stand_in(asset: String, fp: Dictionary) -> Node3D:
 			_box(root, Vector3(0.8, 1.0, 0.7), Vector3(0, 0.6, 0), col)
 			_box(root, Vector3(0.5, 0.35, 0.5), Vector3(0, 1.25, 0), col.darkened(0.15))
 			_box(root, Vector3(0.3, 0.25, 0.75), Vector3(-0.05, 0.25, 0), Color(0.18, 0.3, 0.12))
-			_glow(root, Vector3(0.08, 0.14, 0.14), Vector3(0.27, 1.2, 0), Color(1.0, 0.95, 0.8), 4.0, false)
+			_glow(root, Vector3(0.08, 0.14, 0.14), Vector3(0.27, 1.2, 0), Color(1.0, 0.95, 0.8), 4.0, true)
+			_anchor(root, "headlight", Vector3(0.33, 1.1, 0))
 		"scrap_drone":
 			# Built around y = 0: the presentation lifts the drone to its hover height (models alike).
 			_box(root, Vector3(0.6, 0.35, 0.6), Vector3(0, 0, 0), col)
 			_box(root, Vector3(0.9, 0.06, 0.2), Vector3(0, 0.2, 0), col.darkened(0.3))
-			_glow(root, Vector3(0.1, 0.12, 0.12), Vector3(0.31, 0, 0), Color(1.0, 0.1, 0.05), 6.0, false)
+			_glow(root, Vector3(0.1, 0.12, 0.12), Vector3(0.31, 0, 0), Color(1.0, 0.1, 0.05), 6.0, true)
+			_anchor(root, "eye_light", Vector3(0.4, 0, 0))
 		"fuel_canister":
 			_box(root, Vector3(0.36, 0.48, 0.18), Vector3(0, 0.24, 0), col)
 		"street_lamp":
 			_cylinder(root, 0.09, 4.3, Vector3(0, 2.15, 0), col)
-			_box(root, Vector3(0.8, 0.08, 0.1), Vector3(0.35, 4.3, 0), col)
-			_glow(root, Vector3(0.3, 0.12, 0.25), Vector3(0.6, 4.22, 0), Color(1.0, 0.7, 0.35), 6.0, true)
+			_box(root, Vector3(0.1, 0.08, 1.2), Vector3(0, 4.3, -0.55), col)
+			_glow(root, Vector3(0.25, 0.12, 0.3), Vector3(0, 4.22, -1.1), Color(1.0, 0.7, 0.35), 6.0, true)
+			_anchor(root, "light", Vector3(0, 4.1, -1.1))
 		"campfire":
 			_cylinder(root, 0.6, 0.2, Vector3(0, 0.1, 0), col)
 			_glow(root, Vector3(0.6, 0.15, 0.6), Vector3(0, 0.22, 0), Color(1.0, 0.4, 0.08), 8.0, true)
+			_anchor(root, "light", Vector3(0, 0.6, 0))
 		"tree":
 			_cylinder(root, 0.25, 3.0, Vector3(0, 1.5, 0), Color(0.24, 0.18, 0.12))
 			_sphere(root, 2.0, Vector3(0, 4.0, 0), col)
@@ -87,6 +160,13 @@ static func _stand_in(asset: String, fp: Dictionary) -> Node3D:
 			var sz := maxf(float(size[1]), 0.3)
 			_box(root, Vector3(sx, height, sz), Vector3(0, height * 0.5, 0), col)
 	return root
+
+
+static func _anchor(root: Node3D, anchor_name: String, pos: Vector3) -> void:
+	var n := Node3D.new()
+	n.name = anchor_name
+	n.position = pos
+	root.add_child(n)
 
 
 static func _material(col: Color) -> StandardMaterial3D:

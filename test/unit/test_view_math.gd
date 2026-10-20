@@ -13,11 +13,12 @@ func test_heading_towards_plus_z_faces_plus_z() -> void:
 	assert_almost_eq(b * Vector3.RIGHT, Vector3(0, 0, 1), Vector3.ONE * 0.001)
 
 
-func test_layout_rot_matches_sim_footprint_rotation() -> void:
-	# The sim rotates a footprint's local x by rot towards +z; the 3D prop must agree.
+func test_layout_rot_covers_the_same_footprint_as_the_sim() -> void:
+	# The sim's blocking rectangle at rot 90 spans the size's x along z; the rotated 3D prop must too.
 	var b := Basis(Vector3.UP, ViewMath.layout_rot_to_rot_y(90.0))
-	var local_x := Vector2(1, 0).rotated(deg_to_rad(90.0))
-	assert_almost_eq(b * Vector3.RIGHT, Vector3(local_x.x, 0, local_x.y), Vector3.ONE * 0.001)
+	var half_x := b * Vector3(2.0, 0, 0)  # a footprint 4 m along local x
+	assert_almost_eq(absf(half_x.z), 2.0, 0.001)
+	assert_almost_eq(absf(half_x.x), 0.0, 0.001)
 
 
 func test_sim_and_world_round_trip() -> void:
