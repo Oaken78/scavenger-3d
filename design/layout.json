@@ -1,0 +1,53 @@
+{
+  "units": "metres; x east, z south, y up, ground y = 0; rot in degrees about +y, only 0/90/180/270",
+  "bounds": [-20, -20, 20, 20],
+  "road": {"from": [-20, 0], "to": [20, 0], "width": 8},
+  "footprints_note": "blocking footprint per asset at rot 0, [size_x, size_z] in metres, centred on pos; height is for the modeler; bush blocks nothing",
+  "footprints": {
+    "house_ruin_a": {"size": [8, 7], "height": 6},
+    "house_ruin_b": {"size": [7, 6], "height": 5},
+    "subway_entrance": {"size": [4, 6], "height": 3},
+    "car_wreck": {"size": [4.2, 1.9], "height": 1.5},
+    "street_lamp": {"size": [0.4, 0.4], "height": 4.5, "light_height": 4.2},
+    "campfire": {"size": [1.2, 1.2], "height": 0.5, "light_height": 0.6},
+    "tree": {"size": [1, 1], "height": 6},
+    "bush": {"size": [0, 0], "height": 1},
+    "fuel_canister": {"size": [0, 0], "height": 0.5},
+    "scrap_drone": {"size": [0, 0], "height": 0.8, "hover_height": 1.2},
+    "robot": {"size": [0, 0], "height": 1.4, "radius": 0.45, "headlight_height": 1.1}
+  },
+  "player_start": [0, 7],
+  "props": [
+    {"asset": "house_ruin_a", "pos": [-10, -11], "rot": 0},
+    {"asset": "house_ruin_b", "pos": [4, -11], "rot": 0},
+    {"asset": "house_ruin_a", "pos": [-3, 12], "rot": 180},
+    {"asset": "subway_entrance", "pos": [15, -9], "rot": 270},
+    {"asset": "car_wreck", "pos": [-4, 1.5], "rot": 90},
+    {"asset": "car_wreck", "pos": [10, -1], "rot": 270},
+    {"asset": "street_lamp", "pos": [-8, 4.6], "rot": 0, "light": "lamp"},
+    {"asset": "street_lamp", "pos": [7, -4.6], "rot": 180, "light": "lamp_flicker"},
+    {"asset": "campfire", "pos": [-13, 9], "rot": 0, "light": "fire"},
+    {"asset": "tree", "pos": [-17, -3], "rot": 0},
+    {"asset": "tree", "pos": [13, 10], "rot": 90},
+    {"asset": "tree", "pos": [17, 4], "rot": 180},
+    {"asset": "tree", "pos": [-10, 17], "rot": 270},
+    {"asset": "tree", "pos": [1, -17], "rot": 0},
+    {"asset": "bush", "pos": [2, 6], "rot": 0},
+    {"asset": "bush", "pos": [-15, 14], "rot": 90},
+    {"asset": "bush", "pos": [11, -6], "rot": 180},
+    {"asset": "bush", "pos": [-2, -6], "rot": 270},
+    {"asset": "bush", "pos": [8, 14], "rot": 0}
+  ],
+  "pickups": [
+    {"asset": "fuel_canister", "pos": [-14, 12]},
+    {"asset": "fuel_canister", "pos": [10, -13]},
+    {"asset": "fuel_canister", "pos": [16, 15]},
+    {"asset": "fuel_canister", "pos": [-17, -12]},
+    {"asset": "fuel_canister", "pos": [3, 2]}
+  ],
+  "enemies": [
+    {"asset": "scrap_drone", "pos": [-10, -2], "patrol_radius": 4},
+    {"asset": "scrap_drone", "pos": [12, 6], "patrol_radius": 4},
+    {"asset": "scrap_drone", "pos": [5, -16], "patrol_radius": 3}
+  ]
+}

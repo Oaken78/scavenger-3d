@@ -1,0 +1,6 @@
+# Keeper looks: the looks Klas has called final (gdd.md section 10 names them, the Decisions log dates them).
+# Everything visual that is not listed here is a placeholder look: changing it is tier 2 (it must still load and
+# play with 0 errors), its screenshots are taken but never compared, and Klas judges it in the playtest build.
+#   path <glob relative to the game folder>   a change to a matching file is tier 3 (e.g. path shaders/toon.gdshader)
+#   shot <scenario>__<shot>                   this screenshot is compared with test/baselines/ at tier 3
+# A new game starts with none: nothing is final until Klas says so.

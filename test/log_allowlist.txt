@@ -1,0 +1,2 @@
+# One substring per line. Godot log lines starting with ERROR:, SCRIPT ERROR: or SHADER ERROR: that contain
+# a listed substring are ignored by the smoke/shots log scan. Keep this short and justified: a hidden error is a lost bug.

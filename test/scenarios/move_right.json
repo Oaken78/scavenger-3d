@@ -1,0 +1,13 @@
+{
+  "scene": "res://scenes/main.tscn",
+  "seed": 1234,
+  "timeout_frames": 3600,
+  "steps": [
+    {"wait_frames": 5},
+    {"assert_prop": {"node": "Player", "prop": "position:x", "op": "==", "value": 640}},
+    {"action_press": "ui_right", "frames": 30},
+    {"assert_prop": {"node": "Player", "prop": "position:x", "op": ">", "value": 700}},
+    {"screenshot": "after_move"},
+    {"assert_no_errors": true}
+  ]
+}

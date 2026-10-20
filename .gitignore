@@ -1,0 +1,5 @@
+# Godot generated
+.godot/
+# verification output
+.reports/
+*.tmp
