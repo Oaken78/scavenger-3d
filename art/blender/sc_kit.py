@@ -260,6 +260,9 @@ class MB:
                 self.leaf(p + n * 0.02, d, leaf * rng.uniform(0.7, 1.3), leaf * 0.6, rng.choice(cols))
             p = p + Vector((0, 0, -step)) + side * rng.uniform(-wander, wander) * step
 
+    def transform_all(self, m):
+        bmesh.ops.transform(self.bm, matrix=m, verts=list(self.bm.verts))
+
     # --- surface passes ---
     def overgrow(self, prob_top=0.6, prob_side=0.0, side_pred=None, cols=MOSS, min_up=0.65, faces=None):
         """Turn upward faces (and optionally side faces chosen by side_pred(center, normal)) to moss."""

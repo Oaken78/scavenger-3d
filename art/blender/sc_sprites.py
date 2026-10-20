@@ -120,13 +120,6 @@ class SpriteRig:
         bpy.context.view_layer.update()
         m = self.cam.matrix_world.to_3x3()
         self.right, self.up, self.back = m.col[0].normalized(), m.col[1].normalized(), m.col[2].normalized()
-        # an AO-only ground: invisible to the camera, but it darkens the AO where things meet the ground
-        me = bpy.data.meshes.new("ao_ground")
-        s = 60.0
-        me.from_pydata([(-s, -s, 0), (s, -s, 0), (s, s, 0), (-s, s, 0)], [], [(0, 1, 2, 3)])
-        self.ground = bpy.data.objects.new("ao_ground", me)
-        self.ground.visible_camera = False
-        scene.collection.objects.link(self.ground)
         # compositor: every pass to its own float EXR
         scene.use_nodes = True
         tree = scene.node_tree
@@ -149,19 +142,51 @@ class SpriteRig:
         scene.frame_current = 1
 
     def remove_helpers(self):
-        bpy.data.objects.remove(self.ground, do_unlink=True)
         bpy.data.objects.remove(self.cam, do_unlink=True)
+
+    def make_ground(self, asset):
+        """A holdout ground under the asset (parented, so it turns with it): it cuts away whatever lies below
+        ground, as the game's ground would, and darkens the AO where things meet it. `asset.ground_hole`
+        (x0, x1, y0, y1) leaves an opening (the subway stairwell)."""
+        s = 60.0
+        hole = getattr(asset, "ground_hole", None)
+        if hole:
+            x0, x1, y0, y1 = hole
+            rects = [(-s, x0, -s, s), (x1, s, -s, s), (x0, x1, -s, y0), (x0, x1, y1, s)]
+        else:
+            rects = [(-s, s, -s, s)]
+        verts, faces = [], []
+        for (a, b, c, d) in rects:
+            n = len(verts)
+            verts += [(a, c, 0), (b, c, 0), (b, d, 0), (a, d, 0)]
+            faces.append((n, n + 1, n + 2, n + 3))
+        me = bpy.data.meshes.new("sprite_ground")
+        me.from_pydata(verts, [], faces)
+        mat = bpy.data.materials.get("sprite_holdout") or bpy.data.materials.new("sprite_holdout")
+        mat.use_nodes = True
+        nt = mat.node_tree
+        for n in list(nt.nodes):
+            nt.nodes.remove(n)
+        out = nt.nodes.new("ShaderNodeOutputMaterial")
+        nt.links.new(nt.nodes.new("ShaderNodeHoldout").outputs[0], out.inputs["Surface"])
+        me.materials.append(mat)
+        ob = bpy.data.objects.new("sprite_ground", me)
+        ob["helper"] = True
+        self.scene.collection.objects.link(ob)
+        ob.parent = asset.root
+        return ob
 
     # --- projection ---
     def project_bounds(self, asset):
         r, u = self.right, self.up
         xs, ys = [], []
         for ob in asset.objects():
-            if ob.type != "MESH":
+            if ob.type != "MESH" or ob.get("helper"):
                 continue
             mw = ob.matrix_world
             for v in ob.data.vertices:
                 p = mw @ v.co
+                p.z = max(p.z, 0.0)   # below ground only shows through a hole, inside the hole's outline
                 xs.append(p.dot(r))
                 ys.append(p.dot(u))
         return min(xs), max(xs), min(ys), max(ys)
@@ -251,6 +276,7 @@ def prop_dir(asset, d):
 
 def render_asset(rig, asset, out_dir, ao_distance, has_emissive):
     set_dir = (lambda d: actor_dir(asset, d)) if asset.kind == "actor" else (lambda d: prop_dir(asset, d))
+    ground = rig.make_ground(asset)
     w, h, ox, oy = rig.frame_layout(asset, set_dir)
     rig.place_camera(w, h, ox, oy)
     folder = os.path.join(out_dir, asset.name)
@@ -272,6 +298,7 @@ def render_asset(rig, asset, out_dir, ao_distance, has_emissive):
                     write_png(stem + "_e.png", emissive)
                 previews[(anim, d, i)] = (colour, normal, emissive)
     set_dir(0)
+    bpy.data.objects.remove(ground, do_unlink=True)
     if asset.rest:
         asset.rest()
     entry = {
