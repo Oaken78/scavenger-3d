@@ -5,7 +5,7 @@ Edited only by the lead, on `main`. Packets live in `design/tasks/<id>.md` (iden
 ## Milestones
 | Id | Name | Acceptance criteria | Proof | Status |
 |---|---|---|---|---|
-| P0 | Two playable prototypes | Both: click-to-move robot, fuel drain and canisters, drones to fight, lights with shadows, fog toggle, outcomes, frame time readout, same map and rules | `play_loop`, `perf_street`, `test_sim.gd` in each game; two playtest builds | built 2026-10-20 (2d 5b14de7, 3d b91f5a7), with Klas |
+| P0 | Two playable prototypes | Both: click-to-move robot, fuel drain and canisters, drones to fight, lights with shadows, fog toggle, outcomes, frame time readout, same map and rules | `play_loop`, `perf_street`, `test_sim.gd` in each game; two playtest builds | built 2026-10-20 (2d 5b14de7, 3d b91f5a7); decided 2026-10-21: 3D, 2D ruled out (Klas) |
 
 ## Order
 1. T01 (rules, both games) and A01 (models + pre-renders, both games) in parallel.
